@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ../edutask-frontend
 
 This template should help get you started developing with Vue 3 in Vite.
@@ -37,3 +38,6 @@ npm run build
 ```sh
 npm run lint
 ```
+=======
+# edutask-fe
+>>>>>>> 8e1e1d6026ea6fcd1429bffa6e52bcc1a42eaacf
