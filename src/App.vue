@@ -1,5 +1,22 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+import { onMounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const user = computed(() => authStore.user)
+
+onMounted(() => {
+  // Initialize auth state from localStorage
+  authStore.init()
+})
+
+const logout = async () => {
+  await authStore.logout()
+  // Redirect to home page after logout
+  window.location.href = '/'
+}
 </script>
 
 <template>
@@ -12,8 +29,34 @@ import { RouterLink, RouterView } from 'vue-router'
         </div>
         <nav class="flex space-x-4">
           <RouterLink to="/" class="text-gray-600 hover:text-primary">Home</RouterLink>
-          <RouterLink to="/login" class="text-gray-600 hover:text-primary">Login</RouterLink>
-          <RouterLink to="/register" class="text-gray-600 hover:text-primary">Register</RouterLink>
+          
+          <!-- Show these links only when not authenticated -->
+          <template v-if="!isAuthenticated">
+            <RouterLink to="/login" class="text-gray-600 hover:text-primary">Login</RouterLink>
+            <RouterLink to="/register" class="text-gray-600 hover:text-primary">Register</RouterLink>
+          </template>
+          
+          <!-- Show these links only when authenticated -->
+          <template v-else>
+            <RouterLink to="/dashboard" class="text-gray-600 hover:text-primary">Dashboard</RouterLink>
+            <RouterLink to="/projects" class="text-gray-600 hover:text-primary">Projects</RouterLink>
+            <RouterLink to="/tasks" class="text-gray-600 hover:text-primary">Tasks</RouterLink>
+            
+            <!-- User dropdown -->
+            <div class="relative group">
+              <button class="flex items-center space-x-1 text-gray-600 hover:text-primary">
+                <span>{{ user?.name || 'User' }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+              <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
+                <RouterLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</RouterLink>
+                <RouterLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</RouterLink>
+                <button @click="logout" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</button>
+              </div>
+            </div>
+          </template>
         </nav>
       </div>
     </header>

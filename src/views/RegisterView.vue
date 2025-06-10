@@ -1,56 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
 const name = ref('')
 const email = ref('')
 const password = ref('')
 const passwordConfirmation = ref('')
-const error = ref('')
-const isLoading = ref(false)
+const department = ref('')
+const position = ref('')
+const validationError = ref('')
+const authStore = useAuthStore()
 const router = useRouter()
 
+const error = computed(() => authStore.error)
+const isLoading = computed(() => authStore.loading)
+
 const register = async () => {
+  // Reset validation error
+  validationError.value = ''
+  
   if (!name.value || !email.value || !password.value || !passwordConfirmation.value) {
-    error.value = 'Please fill in all fields'
+    validationError.value = 'Please fill in all required fields'
     return
   }
 
   if (password.value !== passwordConfirmation.value) {
-    error.value = 'Passwords do not match'
+    validationError.value = 'Passwords do not match'
     return
   }
 
-  try {
-    isLoading.value = true
-    error.value = ''
-    
-    const response = await axios.post('http://127.0.0.1:8000/api/auth/register', {
-      name: name.value,
-      email: email.value,
-      password: password.value,
-      password_confirmation: passwordConfirmation.value
-    })
-    
-    // Store token in localStorage
-    localStorage.setItem('token', response.data.access_token)
-    localStorage.setItem('user', JSON.stringify(response.data.user))
-    
+  const userData = {
+    name: name.value,
+    email: email.value,
+    password: password.value,
+    password_confirmation: passwordConfirmation.value,
+    department: department.value || undefined,
+    position: position.value || undefined
+  }
+
+  const success = await authStore.register(userData)
+  
+  if (success) {
     // Redirect to dashboard
     router.push('/dashboard')
-  } catch (err: any) {
-    if (err.response && err.response.data && err.response.data.message) {
-      error.value = err.response.data.message
-    } else if (err.response && err.response.data && err.response.data.errors) {
-      const errors = err.response.data.errors
-      const firstError = Object.values(errors)[0]
-      error.value = Array.isArray(firstError) ? firstError[0] : 'Validation failed'
-    } else {
-      error.value = 'Failed to register. Please try again.'
-    }
-  } finally {
-    isLoading.value = false
   }
 }
 </script>
@@ -69,12 +62,12 @@ const register = async () => {
       </div>
 
       <form @submit.prevent="register" class="mt-8 space-y-6">
-        <div v-if="error" class="bg-red-50 text-red-500 p-4 rounded-md text-sm">
-          {{ error }}
+        <div v-if="validationError || error" class="bg-red-50 text-red-500 p-4 rounded-md text-sm">
+          {{ validationError || error }}
         </div>
 
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">Full name</label>
+          <label for="name" class="block text-sm font-medium text-gray-700">Full name <span class="text-red-500">*</span></label>
           <input
             id="name"
             v-model="name"
@@ -86,7 +79,7 @@ const register = async () => {
         </div>
 
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email address <span class="text-red-500">*</span></label>
           <input
             id="email"
             v-model="email"
@@ -96,9 +89,33 @@ const register = async () => {
             placeholder="your@email.com"
           />
         </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
+            <input
+              id="department"
+              v-model="department"
+              type="text"
+              class="input w-full mt-1"
+              placeholder="Engineering"
+            />
+          </div>
+          
+          <div>
+            <label for="position" class="block text-sm font-medium text-gray-700">Position</label>
+            <input
+              id="position"
+              v-model="position"
+              type="text"
+              class="input w-full mt-1"
+              placeholder="Developer"
+            />
+          </div>
+        </div>
 
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password <span class="text-red-500">*</span></label>
           <input
             id="password"
             v-model="password"
@@ -111,7 +128,7 @@ const register = async () => {
 
         <div>
           <label for="password-confirmation" class="block text-sm font-medium text-gray-700">
-            Confirm Password
+            Confirm Password <span class="text-red-500">*</span>
           </label>
           <input
             id="password-confirmation"
