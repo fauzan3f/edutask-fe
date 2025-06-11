@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { taskService } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import CommentList from '@/components/CommentList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -243,6 +244,12 @@ const formatDate = (dateString) => {
     day: 'numeric' 
   })
 }
+
+// Handle comment added event
+const handleCommentAdded = (comment) => {
+  console.log('Comment added:', comment);
+  // You can update task here if needed
+}
 </script>
 
 <template>
@@ -399,65 +406,10 @@ const formatDate = (dateString) => {
         </div>
       </div>
       
-      <div class="bg-white shadow rounded-lg overflow-hidden">
-        <div class="p-6 border-b border-gray-200">
-          <h3 class="text-lg font-medium text-gray-900">Comments</h3>
-        </div>
-        
-        <div v-if="task.comments.length === 0" class="p-6 text-center">
-          <p class="text-gray-500">No comments yet. Be the first to comment!</p>
-        </div>
-        
-        <div v-else class="divide-y divide-gray-200">
-          <div 
-            v-for="comment in task.comments" 
-            :key="comment.id" 
-            class="p-4"
-          >
-            <div class="flex items-start">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span class="text-sm font-medium text-gray-600">{{ comment.user.charAt(0) }}</span>
-                </div>
-              </div>
-              <div class="ml-3 flex-1">
-                <div class="flex items-center justify-between">
-                  <h4 class="text-sm font-medium text-gray-900">{{ comment.user }}</h4>
-                  <span class="text-xs text-gray-500">{{ formatDate(comment.created_at) }}</span>
-                </div>
-                <p class="text-sm text-gray-600 mt-1">{{ comment.content }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="p-4" v-if="authStore.hasPermission('comment on task')">
-          <form @submit.prevent="addComment($event.target.comment.value); $event.target.comment.value = ''">
-            <div class="flex items-start space-x-3">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span class="text-sm font-medium text-gray-600">Y</span>
-                </div>
-              </div>
-              <div class="flex-1">
-                <textarea 
-                  name="comment"
-                  rows="2" 
-                  class="w-full px-3 py-2 text-sm text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                  placeholder="Add a comment..."
-                  required
-                ></textarea>
-                <div class="mt-2 flex justify-end">
-                  <button 
-                    type="submit"
-                    class="btn btn-primary text-sm"
-                  >
-                    Comment
-                  </button>
-                </div>
-              </div>
-            </div>
-          </form>
+      <!-- Task Discussions/Comments Section -->
+      <div class="bg-white shadow rounded-lg overflow-hidden mt-6">
+        <div class="p-6">
+          <CommentList :taskId="Number(route.params.id)" @comment-added="handleCommentAdded" />
         </div>
       </div>
     </div>

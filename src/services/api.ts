@@ -8,6 +8,7 @@ const api = axios.create({
     'Accept': 'application/json',
   },
   withCredentials: true,
+  timeout: 10000, // 10 second timeout
 });
 
 // Add a request interceptor to add the JWT token to requests
@@ -65,29 +66,74 @@ export const authService = {
 
 // Project services
 export const projectService = {
-  getAll: () => 
-    api.get('/projects'),
+  getAll: () => {
+    console.log('Fetching all projects');
+    return api.get('/projects').catch(error => {
+      console.error('Error fetching all projects:', error);
+      throw error;
+    });
+  },
   
-  get: (id: number) => 
-    api.get(`/projects/${id}`),
+  get: (id: number) => {
+    console.log(`Fetching project with ID: ${id}`);
+    return api.get(`/projects/${id}`).catch(error => {
+      console.error(`Error fetching project with ID ${id}:`, error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      throw error;
+    });
+  },
   
-  create: (projectData: any) => 
-    api.post('/projects', projectData),
+  create: (projectData: any) => {
+    console.log('Creating project with data:', projectData);
+    return api.post('/projects', projectData).catch(error => {
+      console.error('Error creating project:', error);
+      throw error;
+    });
+  },
   
   update: (id: number, projectData: any) => {
     console.log('API update called with:', { id, projectData });
     console.log('Progress type:', typeof projectData.progress);
-    return api.put(`/projects/${id}`, projectData);
+    return api.put(`/projects/${id}`, projectData).catch(error => {
+      console.error(`Error updating project with ID ${id}:`, error);
+      throw error;
+    });
   },
   
-  delete: (id: number) => 
-    api.delete(`/projects/${id}`),
+  delete: (id: number) => {
+    console.log(`Deleting project with ID: ${id}`);
+    return api.delete(`/projects/${id}`).catch(error => {
+      console.error(`Error deleting project with ID ${id}:`, error);
+      throw error;
+    });
+  },
   
-  getMembers: (id: number) => 
-    api.get(`/projects/${id}/members`),
+  getMembers: (id: number) => {
+    console.log(`Fetching members for project ID: ${id}`);
+    return api.get(`/projects/${id}/members`).catch(error => {
+      console.error(`Error fetching members for project ID ${id}:`, error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      throw error;
+    });
+  },
   
-  addMember: (id: number, userData: any) => 
-    api.post(`/projects/${id}/members`, userData),
+  addMember: (id: number, userData: any) => {
+    console.log(`Adding member to project ID: ${id}`, userData);
+    return api.post(`/projects/${id}/members`, userData).catch(error => {
+      console.error(`Error adding member to project ID ${id}:`, error);
+      throw error;
+    });
+  },
   
   removeMember: (projectId: number, userId: number) => 
     api.delete(`/projects/${projectId}/members/${userId}`),
@@ -122,17 +168,39 @@ export const taskService = {
 
 // Comment services
 export const commentService = {
-  getTaskComments: (taskId: number) => 
-    api.get(`/comments/task/${taskId}`),
+  getTaskComments: (taskId: number) => {
+    console.log(`Fetching comments for task ID: ${taskId}`);
+    return api.get(`/tasks/${taskId}/comments`).catch(error => {
+      console.error(`Error fetching comments for task ID ${taskId}:`, error);
+      throw error;
+    });
+  },
   
-  create: (commentData: any) => 
-    api.post('/comments', commentData),
+  create: (commentData: any) => {
+    console.log('Creating comment with data:', commentData);
+    const taskId = commentData.task_id;
+    // Endpoint yang benar: /tasks/{id}/comments bukan /comments
+    return api.post(`/tasks/${taskId}/comments`, { content: commentData.content }).catch(error => {
+      console.error('Error creating comment:', error);
+      throw error;
+    });
+  },
   
-  update: (id: number, commentData: any) => 
-    api.put(`/comments/${id}`, commentData),
+  update: (id: number, commentData: any) => {
+    console.log(`Updating comment with ID: ${id}`, commentData);
+    return api.put(`/comments/${id}`, commentData).catch(error => {
+      console.error(`Error updating comment with ID ${id}:`, error);
+      throw error;
+    });
+  },
   
-  delete: (id: number) => 
-    api.delete(`/comments/${id}`),
+  delete: (id: number) => {
+    console.log(`Deleting comment with ID: ${id}`);
+    return api.delete(`/comments/${id}`).catch(error => {
+      console.error(`Error deleting comment with ID ${id}:`, error);
+      throw error;
+    });
+  },
 };
 
 // File upload service
