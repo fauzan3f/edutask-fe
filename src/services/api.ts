@@ -74,8 +74,11 @@ export const projectService = {
   create: (projectData: any) => 
     api.post('/projects', projectData),
   
-  update: (id: number, projectData: any) => 
-    api.put(`/projects/${id}`, projectData),
+  update: (id: number, projectData: any) => {
+    console.log('API update called with:', { id, projectData });
+    console.log('Progress type:', typeof projectData.progress);
+    return api.put(`/projects/${id}`, projectData);
+  },
   
   delete: (id: number) => 
     api.delete(`/projects/${id}`),

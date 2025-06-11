@@ -10,7 +10,7 @@ const projects = ref([])
 const isLoading = ref(true)
 const error = ref('')
 
-// Dummy data for now
+// Fallback dummy data jika API gagal
 const dummyProjects = [
   {
     id: 1,
@@ -41,21 +41,32 @@ const dummyProjects = [
   }
 ]
 
-onMounted(async () => {
+const fetchProjects = async () => {
+  isLoading.value = true
+  error.value = ''
+  
   try {
-    // In a real app, we would fetch projects from the API
-    // const response = await projectService.getAll()
-    // projects.value = response.data
+    // Fetch projects from the API
+    const response = await projectService.getAll()
+    projects.value = response.data.data || response.data
     
-    // For now, use dummy data
-    setTimeout(() => {
+    // If no projects returned, check if it's due to empty data or wrong format
+    if (!projects.value || projects.value.length === 0) {
+      console.log('No projects returned from API, using dummy data')
       projects.value = dummyProjects
-      isLoading.value = false
-    }, 500)
+    }
   } catch (err: any) {
-    error.value = 'Failed to load projects'
+    console.error('Error fetching projects:', err)
+    error.value = 'Failed to load projects. Using sample data instead.'
+    // Use dummy data as fallback
+    projects.value = dummyProjects
+  } finally {
     isLoading.value = false
   }
+}
+
+onMounted(() => {
+  fetchProjects()
 })
 
 const goToProject = (id: number) => {
@@ -77,6 +88,18 @@ const getStatusColor = (status: string) => {
       return 'bg-yellow-100 text-yellow-800'
     default:
       return 'bg-gray-100 text-gray-800'
+  }
+}
+
+// Format date for better display
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
+  } catch (e) {
+    return dateString
   }
 }
 </script>
@@ -139,29 +162,39 @@ const getStatusColor = (status: string) => {
           <div class="space-y-3">
             <div class="flex justify-between text-sm">
               <span class="text-gray-500">Deadline</span>
-              <span class="font-medium">{{ project.deadline }}</span>
+              <span class="font-medium">{{ formatDate(project.deadline) }}</span>
             </div>
             
             <div>
               <div class="flex justify-between text-sm mb-1">
                 <span class="text-gray-500">Progress</span>
-                <span class="font-medium">{{ project.progress }}%</span>
+                <span class="font-medium">{{ project.progress || 0 }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2">
                 <div 
                   class="bg-primary h-2 rounded-full" 
-                  :style="{ width: `${project.progress}%` }"
+                  :style="{ width: `${project.progress || 0}%` }"
                 ></div>
               </div>
             </div>
             
             <div class="flex justify-between text-sm">
               <span class="text-gray-500">Team</span>
-              <span class="font-medium">{{ project.members }} members</span>
+              <span class="font-medium">{{ project.members || 0 }} members</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+    
+    <!-- Refresh button -->
+    <div class="mt-6 text-center">
+      <button 
+        @click="fetchProjects"
+        class="btn btn-outline-primary"
+      >
+        Refresh Projects
+      </button>
     </div>
   </div>
 </template> 

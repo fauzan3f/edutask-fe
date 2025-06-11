@@ -11,7 +11,7 @@ const isLoading = ref(true)
 const error = ref('')
 const filterStatus = ref('all')
 
-// Dummy data for now
+// Fallback dummy data jika API gagal
 const dummyTasks = [
   {
     id: 1,
@@ -78,21 +78,32 @@ const statusOptions = [
   { value: 'completed', label: 'Completed' }
 ]
 
-onMounted(async () => {
+const fetchTasks = async () => {
+  isLoading.value = true
+  error.value = ''
+  
   try {
-    // In a real app, we would fetch tasks from the API
-    // const response = await taskService.getAll()
-    // tasks.value = response.data
+    // Fetch tasks from the API
+    const response = await taskService.getAll()
+    tasks.value = response.data.data || response.data
     
-    // For now, use dummy data
-    setTimeout(() => {
+    // If no tasks returned, check if it's due to empty data or wrong format
+    if (!tasks.value || tasks.value.length === 0) {
+      console.log('No tasks returned from API, using dummy data')
       tasks.value = dummyTasks
-      isLoading.value = false
-    }, 500)
+    }
   } catch (err: any) {
-    error.value = 'Failed to load tasks'
+    console.error('Error fetching tasks:', err)
+    error.value = 'Failed to load tasks. Using sample data instead.'
+    // Use dummy data as fallback
+    tasks.value = dummyTasks
+  } finally {
     isLoading.value = false
   }
+}
+
+onMounted(() => {
+  fetchTasks()
 })
 
 const filteredTasks = computed(() => {
@@ -112,7 +123,7 @@ const createNewTask = () => {
 
 // Function to get priority badge class
 const getPriorityClass = (priority: string) => {
-  switch (priority.toLowerCase()) {
+  switch (priority?.toLowerCase()) {
     case 'high':
       return 'bg-red-100 text-red-800'
     case 'medium':
@@ -126,7 +137,7 @@ const getPriorityClass = (priority: string) => {
 
 // Function to get status class
 const getStatusClass = (status: string) => {
-  switch (status.toLowerCase()) {
+  switch (status?.toLowerCase()) {
     case 'completed':
       return 'border-green-500 text-green-700'
     case 'in-progress':
@@ -135,6 +146,18 @@ const getStatusClass = (status: string) => {
       return 'border-gray-500 text-gray-700'
     default:
       return 'border-gray-300 text-gray-700'
+  }
+}
+
+// Format date for better display
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A'
+  
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
+  } catch (e) {
+    return dateString
   }
 }
 </script>
@@ -230,10 +253,10 @@ const getStatusClass = (status: string) => {
             
             <div class="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
               <span :class="['px-2 py-1 text-xs rounded-full font-medium', getPriorityClass(task.priority)]">
-                {{ task.priority }}
+                {{ task.priority || 'normal' }}
               </span>
               <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                {{ task.project }}
+                {{ task.project || 'No Project' }}
               </span>
             </div>
           </div>
@@ -243,24 +266,28 @@ const getStatusClass = (status: string) => {
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              Due: {{ task.due_date }}
+              Due: {{ formatDate(task.due_date) }}
             </div>
             
             <div class="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Assigned to: {{ task.assigned_to }}
-            </div>
-            
-            <div class="flex items-center">
-              <span :class="['border-l-4 pl-2 py-0.5', getStatusClass(task.status)]">
-                {{ task.status === 'in-progress' ? 'In Progress' : task.status.charAt(0).toUpperCase() + task.status.slice(1) }}
-              </span>
+              Assigned to: {{ task.assigned_to || 'Unassigned' }}
             </div>
           </div>
         </li>
       </ul>
+    </div>
+    
+    <!-- Refresh button -->
+    <div class="mt-6 text-center">
+      <button 
+        @click="fetchTasks"
+        class="btn btn-outline-primary"
+      >
+        Refresh Tasks
+      </button>
     </div>
   </div>
 </template> 

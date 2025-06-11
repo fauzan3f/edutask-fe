@@ -37,9 +37,57 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/projects/create',
+      name: 'project-create',
+      component: () => import('../views/ProjectCreateView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/projects/:id',
+      name: 'project-detail',
+      component: () => import('../views/ProjectDetailView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/projects/:id/edit',
+      name: 'project-edit',
+      component: () => import('../views/ProjectEditView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/tasks',
       name: 'tasks',
       component: () => import('../views/TasksView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tasks/create',
+      name: 'task-create',
+      component: () => import('../views/TaskCreateView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tasks/:id',
+      name: 'task-detail',
+      component: () => import('../views/TaskDetailView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/tasks/:id/edit',
+      name: 'task-edit',
+      component: () => import('../views/TaskEditView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/users',
+      name: 'users',
+      component: () => import('../views/UsersView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/users/:id/edit',
+      name: 'user-edit',
+      component: () => import('../views/UserEditView.vue'),
       meta: { requiresAuth: true }
     },
     {
