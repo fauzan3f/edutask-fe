@@ -54,6 +54,26 @@ const dummyProjects = [
   }
 ]
 
+// Format date for display
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString; // Return original if invalid
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+// Format date for input field (YYYY-MM-DD)
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ''; // Return empty if invalid
+  return date.toISOString().split('T')[0];
+}
+
 onMounted(async () => {
   const projectId = parseInt(route.params.id as string)
   
@@ -80,7 +100,9 @@ onMounted(async () => {
       name.value = projectData.name
       description.value = projectData.description
       status.value = projectData.status
-      deadline.value = projectData.deadline
+      if (projectData && projectData.deadline) {
+        deadline.value = formatDateForInput(projectData.deadline);
+      }
       progress.value = projectData.progress || 0
     } catch (err) {
       console.error('Error fetching project, trying dummy data:', err)
@@ -94,7 +116,9 @@ onMounted(async () => {
         name.value = dummyProject.name
         description.value = dummyProject.description
         status.value = dummyProject.status
-        deadline.value = dummyProject.deadline
+        if (dummyProject && dummyProject.deadline) {
+          deadline.value = formatDateForInput(dummyProject.deadline);
+        }
         progress.value = dummyProject.progress
       } else {
         error.value = 'Project not found'
@@ -230,15 +254,22 @@ const cancel = () => {
           </select>
         </div>
         
-        <div>
+        <div class="mb-4">
           <label for="deadline" class="block text-sm font-medium text-gray-700">Deadline <span class="text-red-500">*</span></label>
           <input
             id="deadline"
             v-model="deadline"
             type="date"
-            required
             class="input w-full mt-1"
+            :class="{ 'border-red-500': validationErrors.deadline }"
+            required
           />
+          <div class="text-sm text-gray-500 mt-1" v-if="deadline">
+            Selected date: {{ formatDate(deadline) }}
+          </div>
+          <div v-if="validationErrors.deadline" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.deadline[0] }}
+          </div>
         </div>
         
         <div>

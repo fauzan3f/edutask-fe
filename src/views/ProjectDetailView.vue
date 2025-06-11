@@ -286,6 +286,20 @@ const addTeamMember = async () => {
     addingMember.value = false
   }
 }
+
+// Format date untuk tampilan yang lebih user-friendly
+const formatDate = (dateString) => {
+  if (!dateString) return 'Not set';
+  
+  // Remove any time component and timezone info
+  const date = new Date(dateString.split('T')[0]);
+  
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+}
 </script>
 
 <template>
@@ -366,7 +380,7 @@ const addTeamMember = async () => {
               <div class="space-y-3">
                 <div>
                   <div class="text-sm text-gray-500 mb-1">Deadline</div>
-                  <div class="font-medium">{{ project.deadline }}</div>
+                  <div class="font-medium">{{ formatDate(project.deadline) }}</div>
                 </div>
                 
                 <div>
