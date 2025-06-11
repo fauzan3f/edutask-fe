@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { taskService, projectService } from '@/services/api'
+import { taskService, projectService, userService } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
@@ -10,6 +10,7 @@ const isLoading = ref(false)
 const error = ref('')
 const projects = ref([])
 const isLoadingProjects = ref(true)
+const isLoadingUsers = ref(true)
 
 // Form fields
 const title = ref('')
@@ -34,18 +35,40 @@ const priorityOptions = [
   { value: 'high', label: 'High' }
 ]
 
-// Team members (would be fetched from API in a real app)
-const teamMembers = ref([
+// Team members from database
+const teamMembers = ref([])
+
+// Fallback dummy users if API fails
+const dummyUsers = [
   { id: 1, name: 'Admin', email: 'admin@example.com' },
   { id: 2, name: 'Manager', email: 'manager@example.com' },
   { id: 3, name: 'John Doe', email: 'john@example.com' },
   { id: 4, name: 'Jane Smith', email: 'jane@example.com' },
   { id: 5, name: 'Alex Johnson', email: 'alex@example.com' }
-])
+]
+
+// Computed properties for organizing users by role
+const adminUsers = computed(() => {
+  return teamMembers.value.filter(user => user.role === 'admin');
+});
+
+const managerUsers = computed(() => {
+  return teamMembers.value.filter(user => user.role === 'project_manager');
+});
+
+const teamMemberUsers = computed(() => {
+  return teamMembers.value.filter(user => user.role === 'team_member');
+});
+
+const otherUsers = computed(() => {
+  return teamMembers.value.filter(user => 
+    !['admin', 'project_manager', 'team_member'].includes(user.role)
+  );
+});
 
 onMounted(async () => {
   try {
-    // In a real app, we would fetch projects from the API
+    // Fetch projects from the API
     const response = await projectService.getAll()
     projects.value = response.data.data || response.data
   } catch (err) {
@@ -58,6 +81,25 @@ onMounted(async () => {
     ]
   } finally {
     isLoadingProjects.value = false
+  }
+
+  try {
+    // Fetch users from the API using the task-assignees endpoint
+    const usersResponse = await userService.getTaskAssignees()
+    teamMembers.value = usersResponse.data.data || usersResponse.data
+    
+    if (!teamMembers.value || !Array.isArray(teamMembers.value) || teamMembers.value.length === 0) {
+      console.log('No users returned from API or invalid format, using dummy data')
+      teamMembers.value = dummyUsers
+    } else {
+      console.log('Loaded', teamMembers.value.length, 'users for assignment')
+    }
+  } catch (err) {
+    console.error('Error fetching users:', err)
+    // Use dummy data as fallback
+    teamMembers.value = dummyUsers
+  } finally {
+    isLoadingUsers.value = false
   }
 })
 
@@ -220,19 +262,61 @@ const cancel = () => {
           
           <div>
             <label for="assigned_to" class="block text-sm font-medium text-gray-700">Assigned To</label>
+            <div v-if="isLoadingUsers" class="flex items-center mt-1">
+              <div class="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
+              <span class="text-sm text-gray-500">Loading users...</span>
+            </div>
             <select
+              v-else
               id="assigned_to"
               v-model="assigned_to"
               class="input w-full mt-1"
             >
               <option value="">Unassigned</option>
-              <option 
-                v-for="member in teamMembers" 
-                :key="member.id" 
-                :value="member.id"
-              >
-                {{ member.name }}
-              </option>
+              
+              <!-- Team Members -->
+              <optgroup label="Team Members">
+                <option 
+                  v-for="user in teamMemberUsers" 
+                  :key="user.id" 
+                  :value="user.id"
+                >
+                  {{ user.name }} - {{ user.position || 'Team Member' }}
+                </option>
+              </optgroup>
+              
+              <!-- Project Managers -->
+              <optgroup label="Project Managers" v-if="managerUsers.length > 0">
+                <option 
+                  v-for="user in managerUsers" 
+                  :key="user.id" 
+                  :value="user.id"
+                >
+                  {{ user.name }} - {{ user.position || 'Project Manager' }}
+                </option>
+              </optgroup>
+              
+              <!-- Admins -->
+              <optgroup label="Administrators" v-if="adminUsers.length > 0">
+                <option 
+                  v-for="user in adminUsers" 
+                  :key="user.id" 
+                  :value="user.id"
+                >
+                  {{ user.name }} - {{ user.position || 'Administrator' }}
+                </option>
+              </optgroup>
+              
+              <!-- Other Users -->
+              <optgroup label="Other Users" v-if="otherUsers.length > 0">
+                <option 
+                  v-for="user in otherUsers" 
+                  :key="user.id" 
+                  :value="user.id"
+                >
+                  {{ user.name }} - {{ user.position || 'User' }}
+                </option>
+              </optgroup>
             </select>
           </div>
         </div>

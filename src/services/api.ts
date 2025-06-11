@@ -222,4 +222,31 @@ export const fileService = {
     api.get(`/files/${filename}`),
 };
 
+// User services
+export const userService = {
+  getAll: () => {
+    console.log('Fetching all users');
+    return api.get('/users').catch(error => {
+      console.error('Error fetching all users:', error);
+      throw error;
+    });
+  },
+  
+  get: (id: number) => {
+    console.log(`Fetching user with ID: ${id}`);
+    return api.get(`/users/${id}`).catch(error => {
+      console.error(`Error fetching user with ID ${id}:`, error);
+      throw error;
+    });
+  },
+  
+  getTaskAssignees: () => {
+    console.log('Fetching users for task assignment');
+    return api.get('/task-assignees').catch(error => {
+      console.error('Error fetching task assignees:', error);
+      throw error;
+    });
+  }
+};
+
 export default api; 

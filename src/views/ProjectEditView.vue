@@ -10,6 +10,7 @@ const authStore = useAuthStore()
 const isLoading = ref(false)
 const isFetching = ref(true)
 const error = ref('')
+const validationErrors = ref({})
 
 // Form fields
 const id = ref(null)
@@ -77,6 +78,10 @@ const formatDateForInput = (dateString) => {
 onMounted(async () => {
   const projectId = parseInt(route.params.id as string)
   
+  // Reset state
+  error.value = ''
+  validationErrors.value = {}
+  
   try {
     // Check if user has permission to edit projects
     if (!authStore.isAdmin && !authStore.isProjectManager) {
@@ -142,7 +147,8 @@ const updateProject = async () => {
 
   isLoading.value = true
   error.value = ''
-
+  validationErrors.value = {}
+  
   try {
     // Ensure progress is an integer
     const progressValue = parseInt(progress.value)
@@ -166,20 +172,18 @@ const updateProject = async () => {
     router.push(`/projects/${projectId}`)
   } catch (err: any) {
     console.error('Error updating project:', err)
-    console.error('Error response:', err.response?.data)
+    isLoading.value = false
     
     if (err.response?.data?.errors) {
       // Format validation errors
-      const validationErrors = err.response.data.errors
-      const errorMessages = Object.values(validationErrors).flat()
+      validationErrors.value = err.response.data.errors
+      const errorMessages = Object.values(validationErrors.value).flat()
       error.value = errorMessages.join(', ')
     } else if (err.response?.data?.error) {
       error.value = err.response.data.error
     } else {
       error.value = 'Failed to update project. Please try again.'
     }
-  } finally {
-    isLoading.value = false
   }
 }
 
@@ -220,8 +224,12 @@ const cancel = () => {
             type="text"
             required
             class="input w-full mt-1"
+            :class="{ 'border-red-500': validationErrors.value?.name }"
             placeholder="Enter project name"
           />
+          <div v-if="validationErrors.value?.name" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.value.name[0] }}
+          </div>
         </div>
         
         <div>
@@ -232,8 +240,12 @@ const cancel = () => {
             rows="4"
             required
             class="input w-full mt-1"
+            :class="{ 'border-red-500': validationErrors.value?.description }"
             placeholder="Enter project description"
           ></textarea>
+          <div v-if="validationErrors.value?.description" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.value.description[0] }}
+          </div>
         </div>
         
         <div>
@@ -243,15 +255,16 @@ const cancel = () => {
             v-model="status"
             required
             class="input w-full mt-1"
+            :class="{ 'border-red-500': validationErrors.value?.status }"
           >
-            <option 
-              v-for="option in statusOptions" 
-              :key="option.value" 
-              :value="option.value"
-            >
-              {{ option.label }}
-            </option>
+            <option value="" disabled>Select status</option>
+            <option value="Planning">Planning</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Completed">Completed</option>
           </select>
+          <div v-if="validationErrors.value?.status" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.value.status[0] }}
+          </div>
         </div>
         
         <div class="mb-4">
@@ -261,30 +274,30 @@ const cancel = () => {
             v-model="deadline"
             type="date"
             class="input w-full mt-1"
-            :class="{ 'border-red-500': validationErrors.deadline }"
+            :class="{ 'border-red-500': validationErrors.value?.deadline }"
             required
           />
           <div class="text-sm text-gray-500 mt-1" v-if="deadline">
             Selected date: {{ formatDate(deadline) }}
           </div>
-          <div v-if="validationErrors.deadline" class="text-red-500 text-sm mt-1">
-            {{ validationErrors.deadline[0] }}
+          <div v-if="validationErrors.value?.deadline" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.value.deadline[0] }}
           </div>
         </div>
         
         <div>
           <label for="progress" class="block text-sm font-medium text-gray-700">Progress</label>
-          <div class="flex items-center mt-1">
-            <input
-              id="progress"
-              v-model.number="progress"
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-            <span class="ml-2 text-sm font-medium text-gray-700">{{ progress }}%</span>
+          <input
+            id="progress"
+            v-model="progress"
+            type="number"
+            min="0"
+            max="100"
+            class="input w-full mt-1"
+            :class="{ 'border-red-500': validationErrors.value?.progress }"
+          />
+          <div v-if="validationErrors.value?.progress" class="text-red-500 text-sm mt-1">
+            {{ validationErrors.value.progress[0] }}
           </div>
         </div>
         
