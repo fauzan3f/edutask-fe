@@ -19,7 +19,13 @@ const dummyProjects = [
     status: 'In Progress',
     deadline: '2025-07-30',
     progress: 65,
-    members: 5
+    members: [
+      { id: 1, name: 'Manager', role: 'Project Manager' },
+      { id: 2, name: 'John Doe', role: 'Developer' },
+      { id: 3, name: 'Jane Smith', role: 'Designer' },
+      { id: 4, name: 'Alex Johnson', role: 'Tester' },
+      { id: 5, name: 'Sarah Wilson', role: 'Content Writer' }
+    ]
   },
   {
     id: 2,
@@ -28,7 +34,11 @@ const dummyProjects = [
     status: 'Planning',
     deadline: '2025-08-15',
     progress: 20,
-    members: 3
+    members: [
+      { id: 1, name: 'Manager', role: 'Project Manager' },
+      { id: 4, name: 'Alex Johnson', role: 'Mobile Developer' },
+      { id: 5, name: 'Sarah Wilson', role: 'UI/UX Designer' }
+    ]
   },
   {
     id: 3,
@@ -37,7 +47,12 @@ const dummyProjects = [
     status: 'Completed',
     deadline: '2025-06-01',
     progress: 100,
-    members: 4
+    members: [
+      { id: 1, name: 'Manager', role: 'Project Manager' },
+      { id: 2, name: 'John Doe', role: 'Developer' },
+      { id: 3, name: 'Jane Smith', role: 'Designer' },
+      { id: 5, name: 'Sarah Wilson', role: 'Content Writer' }
+    ]
   }
 ]
 
@@ -54,6 +69,31 @@ const fetchProjects = async () => {
     if (!projects.value || projects.value.length === 0) {
       console.log('No projects returned from API, using dummy data')
       projects.value = dummyProjects
+    } else {
+      // Make sure all projects have members array initialized
+      projects.value.forEach(project => {
+        if (!project.members) {
+          project.members = []
+        }
+      })
+      
+      // Fetch members for each project
+      for (const project of projects.value) {
+        try {
+          console.log(`Fetching members for project ID: ${project.id}`)
+          const membersResponse = await projectService.getMembers(project.id)
+          if (membersResponse && membersResponse.data) {
+            const membersData = membersResponse.data.data || membersResponse.data
+            if (Array.isArray(membersData)) {
+              project.members = membersData
+              console.log(`Project ${project.id} has ${membersData.length} members`)
+            }
+          }
+        } catch (memberErr) {
+          console.error(`Error fetching members for project ${project.id}:`, memberErr)
+          // Members array is already initialized above
+        }
+      }
     }
   } catch (err: any) {
     console.error('Error fetching projects:', err)
@@ -180,7 +220,9 @@ const formatDate = (dateString) => {
             
             <div class="flex justify-between text-sm">
               <span class="text-gray-500">Team</span>
-              <span class="font-medium">{{ project.members || 0 }} members</span>
+              <span class="font-medium">
+                {{ Array.isArray(project.members) ? project.members.length : (project.members || 0) }} members
+              </span>
             </div>
           </div>
         </div>
